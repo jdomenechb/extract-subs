@@ -4,7 +4,7 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
-fn main() {
+fn check_requirements() {
     Command::new("mkvextract")
         .args(["-V"])
         .output()
@@ -14,7 +14,9 @@ fn main() {
         .args(["-version"])
         .output()
         .expect("ffmpeg needs to be installed.");
+}
 
+fn determine_dir_to_extract() -> String {
     let args: Vec<String> = env::args().collect();
 
     let dir;
@@ -33,6 +35,13 @@ fn main() {
         panic!("ERROR: Provided path does not exist");
     }
 
+    dir
+}
+
+fn main() {
+    check_requirements();
+
+    let dir = determine_dir_to_extract();
     let paths = fs::read_dir(dir).unwrap();
 
     for dir_entry in paths {
