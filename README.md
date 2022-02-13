@@ -1,6 +1,6 @@
 # Extract subs
 
-Small application written in Rust that extracts the subs of a set of MKV files.
+Small application written in Rust that extracts the subs of a set of MKV files, using `mkvextract` and `ffmpeg`.
 
 ## Installation
 
