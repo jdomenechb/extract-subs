@@ -9,7 +9,7 @@ Small application written in Rust that extracts the subs of a set of MKV files, 
 2. Browse to the directory of the project via Terminal, and install the package:
 
 ```
-$ cargo install
+cargo install
 ```
 
 3. Assure the global cargo `bin` folder is in your `$PATH` variable.
@@ -17,4 +17,4 @@ $ cargo install
 ## Usage
 
 1. Browse via Terminal to the folder that contains your MKV files
-2. Run: `extrat-subs`
+2. Run: `extract-subs`
