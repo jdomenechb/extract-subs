@@ -79,11 +79,18 @@ fn main() {
 
         let mut number_tmp = None;
         let mut number_final = None;
+        let mut is_ass = false;
 
         for line in output_lines {
             if line.contains("S_TEXT/ASS") {
                 number_final = number_tmp.clone();
+                is_ass = true;
                 break;
+            }
+
+            if line.contains("S_TEXT/UTF8") {
+                number_final = number_tmp.clone();
+                is_ass = false;
             }
 
             if !line.contains("mkvextract") {
@@ -114,7 +121,16 @@ fn main() {
                 .unwrap()
         );
 
-        let sub_file_str = format!("{}.ass", path_wo_extension.clone());
+        let srt_file = format!("{}.srt", path_wo_extension);
+        let srt_file_path = Path::new(srt_file.as_str());
+
+        if srt_file_path.exists() {
+            fs::remove_file(srt_file_path)
+                .expect(format!("ERROR: Cannot remove SRT file {}", srt_file).as_str());
+        }
+
+        let sub_extension = if is_ass { "ass" } else { "srt" };
+        let sub_file_str = format!("{}.{}", path_wo_extension.clone(), sub_extension);
 
         let extract_result = Command::new("mkvextract")
             .args([
@@ -141,33 +157,27 @@ fn main() {
             continue;
         }
 
-        let srt_file = format!("{}.srt", path_wo_extension);
-        let srt_file_path = Path::new(srt_file.as_str());
+        if is_ass {
+            let conversion_result = Command::new("ffmpeg")
+                .args(["-i", sub_file_str.as_str(), srt_file.as_str()])
+                .output();
 
-        if srt_file_path.exists() {
-            fs::remove_file(srt_file_path)
-                .expect(format!("ERROR: Cannot remove SRT file {}", srt_file).as_str());
-        }
+            if let Err(_) = conversion_result {
+                println!("WARNING: Problem converting file '{}'", sub_file_str);
+                continue;
+            }
 
-        let conversion_result = Command::new("ffmpeg")
-            .args(["-i", sub_file_str.as_str(), srt_file.as_str()])
-            .output();
+            let output = conversion_result.unwrap();
 
-        if let Err(_) = conversion_result {
-            println!("WARNING: Problem converting file '{}'", sub_file_str);
-            continue;
-        }
+            if !output.status.success() {
+                println!(
+                    "WARNING: ffmpeg returned exit code '{}' for file '{}'",
+                    output.status.code().unwrap(),
+                    sub_file_str
+                );
 
-        let output = conversion_result.unwrap();
-
-        if !output.status.success() {
-            println!(
-                "WARNING: ffmpeg returned exit code '{}' for file '{}'",
-                output.status.code().unwrap(),
-                sub_file_str
-            );
-
-            continue;
+                continue;
+            }
         }
 
         println!("Processed file '{}'", path_str);
