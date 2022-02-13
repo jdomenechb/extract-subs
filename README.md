@@ -16,5 +16,9 @@ cargo install
 
 ## Usage
 
+### Method 1: Current dir
 1. Browse via Terminal to the folder that contains your MKV files
 2. Run: `extract-subs`
+
+### Method 2: Specify dir
+1. Run: `extract-subs /path/to/the/dir/to/extract`
