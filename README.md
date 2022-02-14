@@ -9,7 +9,7 @@ Small application written in Rust that extracts the subs of a set of MKV files, 
 2. Browse to the directory of the project via Terminal, and install the package:
 
 ```
-cargo install
+cargo install --path ./
 ```
 
 3. Assure the global cargo `bin` folder is in your `$PATH` variable.
