@@ -1,6 +1,6 @@
 mod terminal;
 
-use crate::terminal::{format_error, print_success, print_warning};
+use crate::terminal::{format_error, print_error, print_success, print_warning};
 use regex::Regex;
 use std::env;
 use std::fs;
@@ -63,14 +63,14 @@ fn main() {
         let info_result = Command::new("mkvinfo").args([path_str.clone()]).output();
 
         if let Err(_) = info_result {
-            print_warning(format!("Problem treating file '{}'", path_str));
+            print_error(format!("Problem treating file '{}'", path_str));
             continue;
         }
 
         let output = info_result.unwrap();
 
         if !output.status.success() {
-            print_warning(format!(
+            print_error(format!(
                 "mkvinfo returned exit code '{}' for file '{}'",
                 output.status.code().unwrap(),
                 path_str
@@ -148,14 +148,14 @@ fn main() {
             .output();
 
         if let Err(_) = extract_result {
-            print_warning(format!("Problem extracting file '{}'", path_str));
+            print_error(format!("Problem extracting file '{}'", path_str));
             continue;
         }
 
         let output = extract_result.unwrap();
 
         if !output.status.success() {
-            print_warning(format!(
+            print_error(format!(
                 "mkvextract returned exit code '{}' for file '{}'",
                 output.status.code().unwrap(),
                 path_str
@@ -170,14 +170,14 @@ fn main() {
                 .output();
 
             if let Err(_) = conversion_result {
-                print_warning(format!("Problem converting file '{}'", sub_file_str));
+                print_error(format!("Problem converting file '{}'", sub_file_str));
                 continue;
             }
 
             let output = conversion_result.unwrap();
 
             if !output.status.success() {
-                print_warning(format!(
+                print_error(format!(
                     "ffmpeg returned exit code '{}' for file '{}'",
                     output.status.code().unwrap(),
                     sub_file_str
@@ -187,7 +187,7 @@ fn main() {
             }
 
             if let Err(_) = remove_file(sub_file_str.as_str()) {
-                print_warning(format!("could not delete file '{}'", sub_file_str));
+                print_error(format!("could not delete file '{}'", sub_file_str));
             }
         }
 
