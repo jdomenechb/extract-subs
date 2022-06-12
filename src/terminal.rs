@@ -9,7 +9,7 @@ pub fn format_warning(message: &str) -> String {
 }
 
 pub fn format_success(message: &str) -> String {
-    format!("{}", message).green().to_string()
+    message.green().to_string()
 }
 
 pub fn print_error(message: String) {

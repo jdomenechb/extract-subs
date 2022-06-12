@@ -10,10 +10,17 @@ use std::path::Path;
 use std::process::Command;
 
 fn check_requirements() {
-    Command::new("mkvextract").args(["-V"]).output().expect(
-        format_error("mkvextract needs to be installed. Try `sudo apt install mkvtoolnix`.")
-            .as_str(),
-    );
+    Command::new("mkvextract")
+        .args(["-V"])
+        .output()
+        .unwrap_or_else(|_| {
+            panic!(
+                "{}",
+                format_error(
+                    "mkvextract needs to be installed. Try `sudo apt install mkvtoolnix`."
+                )
+            )
+        });
 
     Command::new("ffmpeg")
         .args(["-version"])
@@ -24,17 +31,15 @@ fn check_requirements() {
 fn determine_dir_to_extract() -> String {
     let args: Vec<String> = env::args().collect();
 
-    let dir;
-
-    if args.len() < 2 {
-        dir = env::current_dir()
+    let dir = if args.len() < 2 {
+        env::current_dir()
             .unwrap()
             .into_os_string()
             .into_string()
             .unwrap()
     } else {
-        dir = args.get(1).unwrap().to_string();
-    }
+        args.get(1).unwrap().to_string()
+    };
 
     if !Path::new(dir.as_str()).exists() {
         panic!(
@@ -67,7 +72,7 @@ fn main() {
 
             let info_result = Command::new("mkvinfo").args([path_str.clone()]).output();
 
-            if let Err(_) = info_result {
+            if info_result.is_err() {
                 print_error(format!("Problem treating file '{}'", path_str));
                 return;
             }
@@ -85,7 +90,7 @@ fn main() {
             }
 
             let output_str = String::from_utf8(output.stdout).unwrap();
-            let output_lines: Vec<&str> = output_str.split("\n").collect();
+            let output_lines: Vec<&str> = output_str.split('\n').collect();
 
             let regex_number = Regex::new(r".+\d+.+(\d+)").unwrap();
 
@@ -95,7 +100,7 @@ fn main() {
 
             for line in output_lines {
                 if line.contains("S_TEXT/ASS") {
-                    number_final = number_tmp.clone();
+                    number_final = number_tmp;
                     is_ass = true;
                     break;
                 }
@@ -138,22 +143,26 @@ fn main() {
             let srt_file_path = Path::new(srt_file.as_str());
 
             if srt_file_path.exists() {
-                remove_file(srt_file_path)
-                    .expect(format!("ERROR: Cannot remove SRT file {}", srt_file).as_str());
+                remove_file(srt_file_path).unwrap_or_else(|_| {
+                    panic!(
+                        "{}",
+                        format_error(format!("Cannot remove SRT file {}", srt_file).as_str())
+                    )
+                });
             }
 
             let sub_extension = if is_ass { "ass" } else { "srt" };
-            let sub_file_str = format!("{}.{}", path_wo_extension.clone(), sub_extension);
+            let sub_file_str = format!("{}.{}", path_wo_extension, sub_extension);
 
             let extract_result = Command::new("mkvextract")
                 .args([
                     path_str.clone(),
                     "tracks".to_string(),
-                    format!("{}:{}", number_final.unwrap(), sub_file_str.clone()),
+                    format!("{}:{}", number_final.unwrap(), sub_file_str),
                 ])
                 .output();
 
-            if let Err(_) = extract_result {
+            if extract_result.is_err() {
                 print_error(format!("Problem extracting file '{}'", path_str));
                 return;
             }
@@ -175,7 +184,7 @@ fn main() {
                     .args(["-i", sub_file_str.as_str(), srt_file.as_str()])
                     .output();
 
-                if let Err(_) = conversion_result {
+                if conversion_result.is_err() {
                     print_error(format!("Problem converting file '{}'", sub_file_str));
                     return;
                 }
@@ -192,7 +201,7 @@ fn main() {
                     return;
                 }
 
-                if let Err(_) = remove_file(sub_file_str.as_str()) {
+                if remove_file(sub_file_str.as_str()).is_err() {
                     print_error(format!("could not delete file '{}'", sub_file_str));
                 }
             }
