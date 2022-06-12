@@ -1,6 +1,7 @@
 use regex::Regex;
 use std::env;
 use std::fs;
+use std::fs::remove_file;
 use std::path::Path;
 use std::process::Command;
 
@@ -177,6 +178,10 @@ fn main() {
                 );
 
                 continue;
+            }
+
+            if let Err(_) = remove_file(sub_file_str.as_str()) {
+                println!("WARNING: could not delete file '{}'", sub_file_str);
             }
         }
 
