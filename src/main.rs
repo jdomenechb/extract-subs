@@ -1,3 +1,6 @@
+mod terminal;
+
+use crate::terminal::{format_error, print_success, print_warning};
 use regex::Regex;
 use std::env;
 use std::fs;
@@ -6,10 +9,10 @@ use std::path::Path;
 use std::process::Command;
 
 fn check_requirements() {
-    Command::new("mkvextract")
-        .args(["-V"])
-        .output()
-        .expect("mkvextract needs to be installed. Try `sudo apt install mkvtoolnix`.");
+    Command::new("mkvextract").args(["-V"]).output().expect(
+        format_error("mkvextract needs to be installed. Try `sudo apt install mkvtoolnix`.")
+            .as_str(),
+    );
 
     Command::new("ffmpeg")
         .args(["-version"])
@@ -33,7 +36,10 @@ fn determine_dir_to_extract() -> String {
     }
 
     if !Path::new(dir.as_str()).exists() {
-        panic!("ERROR: Provided path does not exist");
+        panic!(
+            "{}",
+            format_error("Provided path does not exist.",).as_str()
+        );
     }
 
     dir
@@ -57,18 +63,18 @@ fn main() {
         let info_result = Command::new("mkvinfo").args([path_str.clone()]).output();
 
         if let Err(_) = info_result {
-            println!("WARNING: Problem treating file '{}'", path_str);
+            print_warning(format!("Problem treating file '{}'", path_str));
             continue;
         }
 
         let output = info_result.unwrap();
 
         if !output.status.success() {
-            println!(
-                "WARNING: mkvinfo returned exit code '{}' for file '{}'",
+            print_warning(format!(
+                "mkvinfo returned exit code '{}' for file '{}'",
                 output.status.code().unwrap(),
                 path_str
-            );
+            ));
 
             continue;
         }
@@ -104,10 +110,10 @@ fn main() {
         }
 
         if number_final.is_none() {
-            println!(
-                "WARNING: mkvinfo didn't identify any subtitles for file '{}'",
+            print_warning(format!(
+                "mkvinfo didn't identify any subtitles for file '{}'",
                 path_str
-            );
+            ));
             continue;
         }
 
@@ -126,7 +132,7 @@ fn main() {
         let srt_file_path = Path::new(srt_file.as_str());
 
         if srt_file_path.exists() {
-            fs::remove_file(srt_file_path)
+            remove_file(srt_file_path)
                 .expect(format!("ERROR: Cannot remove SRT file {}", srt_file).as_str());
         }
 
@@ -142,18 +148,18 @@ fn main() {
             .output();
 
         if let Err(_) = extract_result {
-            println!("WARNING: Problem extracting file '{}'", path_str);
+            print_warning(format!("Problem extracting file '{}'", path_str));
             continue;
         }
 
         let output = extract_result.unwrap();
 
         if !output.status.success() {
-            println!(
-                "WARNING: mkvextract returned exit code '{}' for file '{}'",
+            print_warning(format!(
+                "mkvextract returned exit code '{}' for file '{}'",
                 output.status.code().unwrap(),
                 path_str
-            );
+            ));
 
             continue;
         }
@@ -164,27 +170,27 @@ fn main() {
                 .output();
 
             if let Err(_) = conversion_result {
-                println!("WARNING: Problem converting file '{}'", sub_file_str);
+                print_warning(format!("Problem converting file '{}'", sub_file_str));
                 continue;
             }
 
             let output = conversion_result.unwrap();
 
             if !output.status.success() {
-                println!(
-                    "WARNING: ffmpeg returned exit code '{}' for file '{}'",
+                print_warning(format!(
+                    "ffmpeg returned exit code '{}' for file '{}'",
                     output.status.code().unwrap(),
                     sub_file_str
-                );
+                ));
 
                 continue;
             }
 
             if let Err(_) = remove_file(sub_file_str.as_str()) {
-                println!("WARNING: could not delete file '{}'", sub_file_str);
+                print_warning(format!("could not delete file '{}'", sub_file_str));
             }
         }
 
-        println!("Processed file '{}'", path_str);
+        print_success(format!("Processed file '{}'", path_str));
     }
 }
